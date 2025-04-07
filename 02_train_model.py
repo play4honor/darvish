@@ -28,14 +28,12 @@ if __name__ == "__main__":
 
     train_dl = torch.utils.data.DataLoader(
         train_ds,
-        batch_size=config["batch_size"],
         shuffle=True,
-        num_workers=config["n_workers"],
+        config["dataloader_params"],
     )
     valid_dl = torch.utils.data.DataLoader(
         valid_ds,
-        batch_size=config["batch_size"],
-        num_workers=config["n_workers"],
+        config["dataloader_params"],
     )
     # For the moment we're not doing anything with the test dataset.
 

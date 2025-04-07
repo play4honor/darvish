@@ -1,0 +1,28 @@
+# Random seed for reproducibility
+random_seed: 12345
+
+# Where is prepared data
+prepared_data_path: ./data
+
+preparation_params:
+  note: This is where information about initial data processing are.
+
+dataset_params:
+  note: For dataset configuration
+
+dataloader_params:
+  # Generic examples.
+  batch_size: 512
+  num_workers: 0
+
+trainer_params:
+  note: For lightning trainer
+
+model_params:
+  note: For model
+
+optimizer_params:
+  # These are just the Adam defaults.
+  lr: 0.001
+  betas: [0.9, 0.999]
+  weight_decay: 0
