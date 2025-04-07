@@ -2,6 +2,6 @@
 torch
 polars
 lightning
-yaml
+pyyaml
 # Obviously optional, but I like it
 black
