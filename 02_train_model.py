@@ -29,24 +29,24 @@ if __name__ == "__main__":
     train_dl = torch.utils.data.DataLoader(
         train_ds,
         shuffle=True,
-        config["dataloader_params"],
+        **config["dataloader_params"],
     )
     valid_dl = torch.utils.data.DataLoader(
         valid_ds,
-        config["dataloader_params"],
+        **config["dataloader_params"],
     )
     # For the moment we're not doing anything with the test dataset.
 
     # Set up the trainer ------------------------------------
 
     trainer = pl.Trainer(
-        **config["trainer_config"],
+        **config["trainer_params"],
         logger=pl.loggers.TensorBoardLogger("."),
         callbacks=pl.callbacks.ModelCheckpoint(
             dirpath="./model",
             save_top_k=1,
-            monitor="validation_loss",
-            filename="{epoch}-{validation_loss:.4f}",
+            monitor="valid_loss",
+            filename="{epoch}-{valid_loss:.4f}",
         ),
     )
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         net = WhateverModel(
             **config["model_params"],
-            **config["optimizer_params"],
+            optimizer_params=config["optimizer_params"],
         )
         # Maybe
         net.compile()

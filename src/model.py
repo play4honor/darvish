@@ -14,10 +14,15 @@ class WhateverModel(pl.LightningModule):
 
     def __init__(
         self,
-        model_params: dict[str, Any],
         optimizer_params: dict[str, Any],
+        *args,
+        **kwargs,
     ):
-        """Initialize the model."""
+        """Initialize the model.
+
+        - optimizer_params: dictionary of parameters to initialize optimizer with.
+        """
+
         super().__init__()
         self.save_hyperparameters(logger=False)
         self.optimizer_params = optimizer_params
@@ -51,10 +56,12 @@ class WhateverModel(pl.LightningModule):
         - stage: one of "train" or "valid"
         - x: dictionary of torch tensors, input to model, targets, etc.
 
-        This MUST log "validation_loss" during the validation step in order to have the model checkpointing work as written.
+        This MUST log "valid_loss" during the validation step in order to have the model checkpointing work as written.
 
         Returns loss as one-element tensor.
         """
+
+        raise NotImplementedError
 
     def training_step(self, x: dict[str, torch.Tensor]) -> torch.Tensor:
         """Lightning hook for training."""

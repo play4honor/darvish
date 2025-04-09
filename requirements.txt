@@ -3,5 +3,8 @@ torch
 polars
 lightning
 pyyaml
-# Obviously optional, but I like it
+# Optional, but I like it
 black
+tensorboard
+# Maybe
+logzero
