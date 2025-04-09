@@ -1,3 +1,3 @@
-# Test some deep regression stuff
+# Fun project template
 
-I want to see if some things work.
+For fun!
