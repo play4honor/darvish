@@ -9,7 +9,7 @@ import torch
 import lightning.pytorch as pl
 
 
-class WhateverModel(pl.LightningModule):
+class DarvishLightning(pl.LightningModule):
     """Model for whatever we're doing."""
 
     def __init__(
