@@ -5,7 +5,7 @@ import torch
 from lightning import pytorch as pl
 
 from src.data import TrainingDataset
-from src.model import WhateverModel
+from src.model import DarvishLightning
 
 if __name__ == "__main__":
 
@@ -41,19 +41,28 @@ if __name__ == "__main__":
 
     trainer = pl.Trainer(
         **config["trainer_params"],
-        logger=pl.loggers.TensorBoardLogger("."),
+        logger=pl.loggers.MLFlowLogger(
+            experiment_name="darvish",
+            tracking_uri="https://p4h.dev/mlflow/"
+        ),
         callbacks=pl.callbacks.ModelCheckpoint(
             dirpath="./model",
             save_top_k=1,
             monitor="valid_loss",
             filename="{epoch}-{valid_loss:.4f}",
         ),
+        detect_anomaly=True,
     )
+
+    model_params = config["model_params"] | {
+        "feature_morphers": train_ds.dataset.morphers,
+        "pitcher_morpher": train_ds.dataset.pitcher_morpher,
+    }
 
     with trainer.init_module():
 
-        net = WhateverModel(
-            **config["model_params"],
+        net = DarvishLightning(
+            model_params=model_params,
             optimizer_params=config["optimizer_params"],
         )
         # Maybe

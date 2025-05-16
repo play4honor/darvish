@@ -11,7 +11,7 @@ import morphers
 
 MORPHER_MAPPING = {
     "categorical": morphers.Integerizer,
-    "numeric": morphers.Normalizer,
+    "numeric": morphers.Quantiler,
 }
 
 label_mapping = {
@@ -151,7 +151,7 @@ class TrainingDataset(Dataset):
         self.pitches = df.select(
             "batter",
             "batter_pitch_number",
-            *[morpher(pl.col(column)) for column, morpher in self.morphers.items()],
+            *[morpher(morpher.fill_missing(pl.col(column))) for column, morpher in self.morphers.items()],
         ).sort("batter", "batter_pitch_number")
 
     def __len__(self) -> int:

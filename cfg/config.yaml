@@ -9,7 +9,15 @@ preparation_params:
   end_date: "2024-12-31"
 
 dataset_params:
-  note: For dataset configuration
+  sequence_length: 256
+  morpher_spec:
+    description: [categorical, {}]
+    pitch_name: [categorical, {}]
+    release_speed: [numeric, {n_quantiles: 64}]
+    plate_x: [numeric, {n_quantiles: 64}]
+    plate_z: [numeric, {n_quantiles: 64}]
+    pfx_x: [numeric, {n_quantiles: 64}]
+    pfx_z: [numeric, {n_quantiles: 64}]
 
 dataloader_params:
   # Generic examples.
@@ -24,7 +32,11 @@ trainer_params:
   log_every_n_steps: 20
 
 model_params:
-  note: For model
+  d_model: 256
+  n_transformer_layers: 4
+  n_kv: 4
+  n_q: 8
+  positional_encoding: "nope"
 
 optimizer_params:
   # These are just the Adam defaults.
