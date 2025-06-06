@@ -21,7 +21,10 @@ dataset_params:
 
 dataloader_params:
   batch_size: 512
-  num_workers: 0
+  multiprocessing_context: spawn
+  persistent_workers: true
+  num_workers: 12
+  drop_last: true
 
 trainer_params:
   # Examples
@@ -31,7 +34,7 @@ trainer_params:
   log_every_n_steps: 20
 
 model_params:
-  d_model: 128
+  d_model: 256
   n_transformer_layers: 4
   n_kv: 4
   n_q: 8

@@ -7,6 +7,8 @@ from lightning import pytorch as pl
 from src.data import TrainingDataset
 from src.model import DarvishLightning
 
+# torch.multiprocessing.set_start_method('spawn', force=True)
+
 if __name__ == "__main__":
 
     # Read the config ---------------------------------------
