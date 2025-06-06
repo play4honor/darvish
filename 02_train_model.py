@@ -42,8 +42,7 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         **config["trainer_params"],
         logger=pl.loggers.MLFlowLogger(
-            experiment_name="darvish",
-            tracking_uri="https://p4h.dev/mlflow/"
+            experiment_name="darvish", tracking_uri="https://p4h.dev/mlflow/"
         ),
         callbacks=pl.callbacks.ModelCheckpoint(
             dirpath="./model",
@@ -51,7 +50,7 @@ if __name__ == "__main__":
             monitor="valid_loss",
             filename="{epoch}-{valid_loss:.4f}",
         ),
-        detect_anomaly=True,
+        num_sanity_val_steps=0,
     )
 
     model_params = config["model_params"] | {

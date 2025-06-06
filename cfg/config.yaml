@@ -9,7 +9,7 @@ preparation_params:
   end_date: "2024-12-31"
 
 dataset_params:
-  sequence_length: 256
+  sequence_length: 128
   morpher_spec:
     description: [categorical, {}]
     pitch_name: [categorical, {}]
@@ -20,7 +20,6 @@ dataset_params:
     pfx_z: [numeric, {n_quantiles: 64}]
 
 dataloader_params:
-  # Generic examples.
   batch_size: 512
   num_workers: 0
 
@@ -32,7 +31,7 @@ trainer_params:
   log_every_n_steps: 20
 
 model_params:
-  d_model: 256
+  d_model: 128
   n_transformer_layers: 4
   n_kv: 4
   n_q: 8

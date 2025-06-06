@@ -39,6 +39,7 @@ label_mapping = {
     "strikeout_double_play": 1,
 }
 
+
 def pad_tensor_dict(tensor_dict: dict[str, torch.Tensor], max_length: int):
     """
     Pad a tensor dict up to the max length.
@@ -89,6 +90,7 @@ class TrainingDataset(Dataset):
             dict[str, tuple[type[morphers.base.base.Morpher], dict[str, Any]]] | None
         ) = None,
         prefit_morphers: dict[str, morphers.base.base.Morpher] | None = None,
+        min_pitches: int = 10,
     ):
         """Load a dataset and do any prep required.
 
@@ -96,6 +98,7 @@ class TrainingDataset(Dataset):
         """
         super().__init__()
         self.sequence_length = sequence_length
+        self.min_pitches = min_pitches
 
         df = pl.read_parquet(path).with_columns(
             pl.col("pitcher")
@@ -133,25 +136,34 @@ class TrainingDataset(Dataset):
         self.pitcher_morpher = morphers.Integerizer.from_data(df["pitcher"])
 
         # Create the target dataframe
-        self.outcomes = df.select(
-            self.pitcher_morpher(pl.col("pitcher")).alias("pitcher"),
-            "batter",
-            pl.col("events").replace(label_mapping, return_dtype=pl.Int64).alias("events"),
-            pl.col("pitcher_pitch_number")
-            .min()
-            .over(["game_pk", "at_bat_number"])
-            .alias("pitcher_pitch_number"),
-            pl.col("batter_pitch_number")
-            .min()
-            .over(["game_pk", "at_bat_number"])
-            .alias("batter_pitch_number"),
-        ).drop_nulls()
+        self.outcomes = (
+            df.select(
+                self.pitcher_morpher(pl.col("pitcher")).alias("pitcher"),
+                "batter",
+                pl.col("events")
+                .replace(label_mapping, return_dtype=pl.Int64)
+                .alias("events"),
+                pl.col("pitcher_pitch_number")
+                .min()
+                .over(["game_pk", "at_bat_number"])
+                .alias("pitcher_pitch_number"),
+                pl.col("batter_pitch_number")
+                .min()
+                .over(["game_pk", "at_bat_number"])
+                .alias("batter_pitch_number"),
+            )
+            .drop_nulls()
+            .filter(pl.col("batter_pitch_number") >= self.min_pitches)
+        )
 
         # Create the batter pitch sequence dataframe.
         self.pitches = df.select(
             "batter",
             "batter_pitch_number",
-            *[morpher(morpher.fill_missing(pl.col(column))) for column, morpher in self.morphers.items()],
+            *[
+                morpher(morpher.fill_missing(pl.col(column)))
+                for column, morpher in self.morphers.items()
+            ],
         ).sort("batter", "batter_pitch_number")
 
     def __len__(self) -> int:
@@ -186,6 +198,7 @@ class TrainingDataset(Dataset):
 
         return inputs | target_info, pad_mask
 
+
 if __name__ == "__main__":
 
     ds = TrainingDataset(
@@ -195,4 +208,3 @@ if __name__ == "__main__":
     )
 
     print(ds[590])
-    

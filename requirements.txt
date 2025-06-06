@@ -8,6 +8,6 @@ black
 tensorboard
 # Maybe
 logzero
-
+mlflow
 pybaseball==2.2.7
 morphers==0.1.2
