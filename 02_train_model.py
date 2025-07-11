@@ -4,7 +4,8 @@ import yaml
 import torch
 from lightning import pytorch as pl
 
-from src.data import TrainingDataset
+from src.data import TrainingDataset, EZTrainingDataset
+from src.net import EZNet, DarvishNet
 from src.model import DarvishLightning
 
 # torch.multiprocessing.set_start_method('spawn', force=True)
@@ -22,9 +23,9 @@ if __name__ == "__main__":
 
     # Generic dataset preparation ---------------------------
 
-    ds = TrainingDataset(
+    ds = EZTrainingDataset(
         path=config["prepared_data_path"],
-        **config["dataset_params"],
+        # **config["dataset_params"],
     )
     train_ds, valid_ds, test_ds = torch.utils.data.random_split(ds, [0.75, 0.15, 0.1])
 
@@ -55,14 +56,22 @@ if __name__ == "__main__":
         num_sanity_val_steps=0,
     )
 
-    model_params = config["model_params"] | {
-        "feature_morphers": train_ds.dataset.morphers,
+    # model_params = config["model_params"] | {
+    #     "feature_morphers": train_ds.dataset.morphers,
+    #     "pitcher_morpher": train_ds.dataset.pitcher_morpher,
+    # }
+
+    model_params = {
+        "d_model": 16,
         "pitcher_morpher": train_ds.dataset.pitcher_morpher,
+        "batter_morpher": train_ds.dataset.batter_morpher,
+        "dropout": 0.2,
     }
 
     with trainer.init_module():
 
         net = DarvishLightning(
+            model_class=EZNet,  # DarvishNet,
             model_params=model_params,
             optimizer_params=config["optimizer_params"],
         )

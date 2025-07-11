@@ -137,20 +137,16 @@ class TrainingDataset(Dataset):
 
         # Create the target dataframe
         self.outcomes = (
-            df.select(
-                self.pitcher_morpher(pl.col("pitcher")).alias("pitcher"),
-                "batter",
+            df.group_by(["game_pk", "at_bat_number", "batter"])
+            .agg(
+                self.pitcher_morpher(pl.col("pitcher")).last().alias("pitcher"),
                 pl.col("events")
                 .replace(label_mapping, return_dtype=pl.Int64)
+                .last()
                 .alias("events"),
-                pl.col("pitcher_pitch_number")
-                .min()
-                .over(["game_pk", "at_bat_number"])
-                .alias("pitcher_pitch_number"),
-                pl.col("batter_pitch_number")
-                .min()
-                .over(["game_pk", "at_bat_number"])
-                .alias("batter_pitch_number"),
+                pl.col("events").last().alias("raw_events"),
+                pl.col("pitcher_pitch_number").min().alias("pitcher_pitch_number"),
+                pl.col("batter_pitch_number").min().alias("batter_pitch_number"),
             )
             .drop_nulls()
             .filter(pl.col("batter_pitch_number") >= self.min_pitches)
@@ -177,6 +173,7 @@ class TrainingDataset(Dataset):
         target_info = {
             "pitcher": torch.tensor(target_row["pitcher"], dtype=torch.long),
             "target": torch.tensor(target_row["events"], dtype=torch.float),
+            "raw_events": target_row["raw_events"],
         }
 
         pitches = self.pitches.filter(
@@ -199,12 +196,64 @@ class TrainingDataset(Dataset):
         return inputs | target_info, pad_mask
 
 
+class EZTrainingDataset(Dataset):
+
+    def __init__(self, path: str):
+
+        data = pl.read_parquet(path)
+
+        self.pitcher_morpher = morphers.Integerizer.from_data(data["pitcher"])
+        self.batter_morpher = morphers.Integerizer.from_data(data["batter"])
+
+        self.df = (
+            data.group_by(["game_pk", "at_bat_number"])
+            .agg(
+                self.pitcher_morpher(pl.col("pitcher")).last().alias("pitcher"),
+                self.batter_morpher(pl.col("batter")).last().alias("batter"),
+                pl.col("events")
+                .replace(label_mapping, return_dtype=pl.Int64)
+                .last()
+                .alias("events"),
+            )
+            .drop_nulls()
+        )
+
+    def __len__(self) -> int:
+        return self.df.height
+
+    def __getitem__(self, idx):
+
+        row = self.df.row(idx, named=True)
+
+        return {
+            "pitcher": torch.tensor(
+                row["pitcher"], dtype=self.pitcher_morpher.required_dtype
+            ),
+            "batter": torch.tensor(
+                row["batter"], dtype=self.batter_morpher.required_dtype
+            ),
+            "target": torch.tensor(row["events"], dtype=torch.float),
+        }, 0
+
+
 if __name__ == "__main__":
 
-    ds = TrainingDataset(
-        "../data/raw_data.parquet",
-        256,
-        {"release_speed": ("numeric", {})},
-    )
+    from torch.utils.data import DataLoader
 
-    print(ds[590])
+    # ds = TrainingDataset(
+    #     "./data/raw_data.parquet",
+    #     256,
+    #     {"release_speed": ("numeric", {"n_quantiles": 16})},
+    # )
+
+    # dl = DataLoader(ds, batch_size=128)
+
+    # batch, mask = next(iter(dl))
+
+    # print(batch["target"].mean())
+    # for target, event in zip(batch["target"].tolist(), batch["pitcher"]):
+    #     print(f"{target}, {event}")
+
+    ds = EZTrainingDataset(path="./data/raw_data.parquet")
+    print(len(ds))
+    print(ds[50])

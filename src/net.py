@@ -19,6 +19,7 @@ class DarvishNet(nn.Module):
         n_kv: int,
         n_q: int,
         positional_encoding: str,
+        dropout: float = 0.2,
     ):
         super().__init__()
         self.d_model = d_model
@@ -47,6 +48,8 @@ class DarvishNet(nn.Module):
         )
         self.input_activation = nn.GELU()
 
+        self.dropout = nn.Dropout(dropout)
+
     def forward(self, x: dict[str, torch.Tensor], mask: torch.Tensor) -> torch.Tensor:
 
         square_mask = mask[:, None, None, :].expand(-1, -1, mask.shape[-1], -1)
@@ -66,5 +69,31 @@ class DarvishNet(nn.Module):
         # (n, e)
         x = (x * multiplicative_mask).sum(dim=1) / multiplicative_mask.sum(dim=1)
 
+        # Dropout
+        x = self.dropout(x)
+        pitcher_embedding = self.dropout(pitcher_embedding)
+
         # (n)
         return (x * pitcher_embedding).sum(dim=1)
+
+
+class EZNet(nn.Module):
+
+    def __init__(self, d_model: int, pitcher_morpher, batter_morpher, dropout: float):
+
+        super().__init__()
+
+        self.d_model = d_model
+        self.pitcher_embedder = pitcher_morpher.make_embedding(d_model)
+        self.batter_embedder = batter_morpher.make_embedding(d_model)
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x, mask):
+
+        pitcher_embedding = self.dropout(self.pitcher_embedder(x["pitcher"]))
+        batter_embedding = self.dropout(self.batter_embedder(x["batter"]))
+
+        # TKTK Concat then linear.
+
+        return (pitcher_embedding * batter_embedding).sum(dim=1)

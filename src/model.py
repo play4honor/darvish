@@ -19,8 +19,9 @@ class DarvishLightning(pl.LightningModule):
 
     def __init__(
         self,
-        optimizer_params: dict[str, Any],
+        model_class: type[nn.Module],
         model_params: dict[str, Any],
+        optimizer_params: dict[str, Any],
     ):
         """Initialize the model."""
 
@@ -28,8 +29,10 @@ class DarvishLightning(pl.LightningModule):
         self.save_hyperparameters(logger=True)
         self.optimizer_params = optimizer_params
 
-        self.model = DarvishNet(**model_params)
-        self.metric = BinaryAUROC()
+        self.model = model_class(**model_params)
+        self.metric = nn.ParameterDict(
+            {"train_auc": BinaryAUROC(), "valid_auc": BinaryAUROC()}
+        )
 
     def configure_optimizers(self):
         """Lightning hook for optimizer setup.
@@ -44,7 +47,7 @@ class DarvishLightning(pl.LightningModule):
     def forward(self, x: dict[str, torch.Tensor], mask: torch.Tensor) -> torch.Tensor:
         """Forward pass for the model.
 
-        - x is compatible with the output of data.TrainingDataset.__getitem__, 
+        - x is compatible with the output of data.TrainingDataset.__getitem__,
           literally the output from a dataloader.
 
         Returns whatever the output of the model is.
@@ -58,7 +61,7 @@ class DarvishLightning(pl.LightningModule):
         - stage: one of "train" or "valid"
         - x: dictionary of torch tensors, input to model, targets, etc.
 
-        This MUST log "valid_loss" during the validation step in order to have 
+        This MUST log "valid_loss" during the validation step in order to have
         the model checkpointing work as written.
 
         Returns loss as one-element tensor.
@@ -68,7 +71,9 @@ class DarvishLightning(pl.LightningModule):
         y_hat = self(x, mask)
         loss = F.binary_cross_entropy_with_logits(y_hat, x["target"])
         self.log(f"{stage}_loss", loss)
-        self.log(f"{stage}_AUROC", self.metric(y_hat, x["target"]))
+        self.log(
+            f"{stage}_AUROC", self.metric[f"{stage}_auc"](y_hat, x["target"].int())
+        )
         return loss
 
     def training_step(self, x: dict[str, torch.Tensor]) -> torch.Tensor:

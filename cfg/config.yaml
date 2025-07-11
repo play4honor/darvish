@@ -23,25 +23,26 @@ dataloader_params:
   batch_size: 512
   multiprocessing_context: spawn
   persistent_workers: true
-  num_workers: 12
+  num_workers: 14
   drop_last: true
 
 trainer_params:
   # Examples
   precision: bf16-mixed
-  max_epochs: 16
+  max_epochs: 64
   accumulate_grad_batches: 1
   log_every_n_steps: 20
 
 model_params:
-  d_model: 256
+  d_model: 1
   n_transformer_layers: 4
   n_kv: 4
   n_q: 8
   positional_encoding: "nope"
+  dropout: 0.2
 
 optimizer_params:
   # These are just the Adam defaults.
-  lr: 0.001
+  lr: 0.01
   betas: [0.9, 0.999]
   weight_decay: 0
